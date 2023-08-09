@@ -1,0 +1,60 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - "8081:80"
+    volumes:
+      - ./innoscripta-challenge-react:/var/www/backend
+    networks:
+      - lamp-network
+
+  backend:
+    build:
+      context: .
+    container_name: backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./innoscripta-challenge-backend:/var/www/backend
+    networks:
+      - lamp-network
+    depends_on:
+      - frontend
+      - mysql
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - lamp-network
+
+  cron:
+    build:
+      context: .
+    container_name: laravel-cron
+    volumes:
+      - ./innoscripta-challenge-backend:/var/www/backend
+      - ./cron:/etc/cron.d
+    networks:
+      - lamp-network
+    entrypoint: [ "bash", "-c", "cron -f" ]
+    depends_on:
+      - backend
+      - mysql
+
+volumes:
+  mysql-data:
+
+networks:
+  lamp-network:

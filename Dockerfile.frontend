@@ -1,0 +1,30 @@
+# Use the official Node.js image
+FROM node:20-alpine
+
+# Set the working directory inside the container
+WORKDIR /var/www/frontend
+
+# Copy the application files to the container
+COPY ./innoscripta-challenge-react .
+
+# Install Vite globally
+RUN npm install -g vite
+
+# Install dependencies and build the React app
+RUN npm install
+RUN npm run build
+
+# Use the official Apache image
+FROM httpd:2.4
+
+# Copy your Apache virtual host configuration
+COPY ./apache/default.conf /usr/local/apache2/conf/extra/httpd-vhosts.conf
+
+# Copy the built frontend files from the previous stage
+COPY --from=0 /var/www/frontend/dist /usr/local/apache2/htdocs
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache using the default entrypoint and CMD
+CMD ["httpd-foreground"]
